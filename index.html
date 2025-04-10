@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Projects Tree</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light theme */
+            --light-bg: #ffffff;
+            --light-container: #f8f9fa;
+            --light-text: #2d3748;
+            --light-node-stroke: #4a5568;
+            --light-node-fill: #ffffff;
+            --light-link: #cbd5e0;
+            --light-hover: #4299e1;
+            --light-controls: #edf2f7;
+            --light-button: #4299e1;
+            --light-button-text: #ffffff;
+            --light-button-hover: #3182ce;
+            --light-hover-text: #2d3748;
+
+            /* Dark theme */
+            --dark-bg: #1a202c;
+            --dark-container: #2d3748;
+            --dark-text: #f7fafc;
+            --dark-node-stroke: #63b3ed;
+            --dark-node-fill: #2d3748;
+            --dark-link: #4a5568;
+            --dark-hover: #63b3ed;
+            --dark-controls: #2d3748;
+            --dark-button: #63b3ed;
+            --dark-button-text: #1a202c;
+            --dark-button-hover: #4299e1;
+            --dark-hover-text: #f7fafc;
+
+            /* Font variables */
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            --font-secondary: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+            /* Current theme (default to light) */
+            --bg-color: var(--light-bg);
+            --container-bg: var(--light-container);
+            --text-color: var(--light-text);
+            --node-stroke: var(--light-node-stroke);
+            --node-fill: var(--light-node-fill);
+            --link-color: var(--light-link);
+            --hover-color: var(--light-hover);
+            --controls-bg: var(--light-controls);
+            --button-bg: var(--light-button);
+            --button-text: var(--light-button-text);
+            --button-hover: var(--light-button-hover);
+            --hover-text: var(--light-hover-text);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: var(--dark-bg);
+            --container-bg: var(--dark-container);
+            --text-color: var(--dark-text);
+            --node-stroke: var(--dark-node-stroke);
+            --node-fill: var(--dark-node-fill);
+            --link-color: var(--dark-link);
+            --hover-color: var(--dark-hover);
+            --controls-bg: var(--dark-controls);
+            --button-bg: var(--dark-button);
+            --button-text: var(--dark-button-text);
+            --button-hover: var(--dark-button-hover);
+            --hover-text: var(--dark-hover-text);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-primary);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--container-bg);
+            transition: background-color 0.3s ease;
+        }
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .projects-panel {
+            width: 300px;
+            background-color: var(--container-bg);
+            border-left: 1px solid var(--link-color);
+            padding: 20px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        .projects-panel::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        .projects-panel h2 {
+            color: var(--text-color);
+            font-family: var(--font-secondary);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .project-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: var(--bg-color);
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+        .project-item.dimmed {
+            opacity: 0.3;
+        }
+        .project-item.highlighted {
+            transform: translateX(5px);
+            background-color: var(--controls-bg);
+            opacity: 1;
+        }
+        .project-item:hover {
+            transform: translateX(5px);
+            background-color: var(--controls-bg);
+            opacity: 1;
+        }
+        .project-algorithm {
+            color: var(--hover-color);
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .project-name {
+            color: var(--text-color);
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        h1 {
+            color: var(--text-color);
+            text-align: center;
+            margin: 20px 0;
+            padding: 0 20px;
+            font-size: 2.5em;
+            letter-spacing: 1px;
+            font-family: var(--font-secondary);
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .node circle {
+            fill: var(--node-fill);
+            stroke: var(--node-stroke);
+            stroke-width: 3px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .node.leaf circle:hover {
+            fill: var(--hover-color);
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+        .node text {
+            font-family: var(--font-primary);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            fill: var(--text-color);
+        }
+        .node text.leaf-text {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            fill: var(--text-color);
+            font-weight: 600;
+        }
+        .node.leaf:hover text.leaf-text {
+            opacity: 1;
+        }
+        .link {
+            fill: none;
+            stroke: var(--link-color);
+            stroke-width: 2px;
+            transition: all 0.3s ease;
+        }
+        .link:hover {
+            stroke: var(--hover-color);
+            stroke-width: 3px;
+        }
+        #tree {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .controls {
+            text-align: center;
+            padding: 10px;
+            background-color: var(--controls-bg);
+            border-top: 1px solid var(--link-color);
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: var(--font-primary);
+            letter-spacing: 0.5px;
+        }
+        button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: var(--font-primary);
+            letter-spacing: 0.5px;
+        }
+        .theme-toggle:hover {
+            background-color: var(--button-hover);
+        }
+        .node circle.highlighted {
+            fill: var(--hover-color);
+            transform: scale(1.2);
+        }
+        .node text.highlighted {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+    <div class="container">
+        <h1>Machine Learning Projects Tree</h1>
+        <div class="main-content">
+            <div id="tree"></div>
+            <div class="projects-panel">
+                <h2>Projects</h2>
+                <div class="project-list">
+                    <div class="project-item">
+                        <div class="project-algorithm">Decision Tree</div>
+                        <div class="project-name">Credit Risk Assessment</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">Gradient Boosting</div>
+                        <div class="project-name">Sales Forecasting</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">KNN</div>
+                        <div class="project-name">Product Recommendation</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">Linear Regression</div>
+                        <div class="project-name">House Price Prediction</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">Logistic Regression</div>
+                        <div class="project-name">Customer Churn Prediction</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">Naive Bayes</div>
+                        <div class="project-name">Spam Detection</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">Random Forest</div>
+                        <div class="project-name">Energy Consumption Prediction</div>
+                    </div>
+                    <div class="project-item">
+                        <div class="project-algorithm">SVM</div>
+                        <div class="project-name">Image Classification</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="controls">
+            <button onclick="zoomIn()">Zoom In</button>
+            <button onclick="zoomOut()">Zoom Out</button>
+            <button onclick="resetZoom()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+
+        const data = {
+            "name": "Machine Learning",
+            "children": [
+                {
+                    "name": "Supervised",
+                    "children": [
+                        {
+                            "name": "Classification",
+                            "children": [
+                                {"name": "Logistic Regression"},
+                                {"name": "Decision Tree"},
+                                {"name": "SVM"},
+                                {"name": "Naive Bayes"},
+                                {"name": "Gradient Boosting"}
+                            ]
+                        },
+                        {
+                            "name": "Regression",
+                            "children": [
+                                {"name": "Linear Regression"},
+                                {"name": "Random Forest"}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Unsupervised",
+                    "children": [
+                        {
+                            "name": "Clustering",
+                            "children": [
+                                {"name": "KNN"}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        let width, height;
+        let currentScale = 1;
+        let svg, g;
+
+        function initTree() {
+            // Get container dimensions
+            const container = document.getElementById('tree');
+            width = container.clientWidth;
+            height = container.clientHeight;
+
+            // Clear previous SVG if it exists
+            d3.select("#tree svg").remove();
+
+            // Create new SVG
+            svg = d3.select("#tree")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .call(d3.zoom()
+                    .scaleExtent([0.5, 2])
+                    .on("zoom", (event) => {
+                        g.attr("transform", event.transform);
+                        currentScale = event.transform.k;
+                    }));
+
+            g = svg.append("g")
+                .attr("transform", `translate(${width/2}, 50)`);
+
+            const treeLayout = d3.tree()
+                .size([height - 200, width/2 - 200])
+                .separation((a, b) => {
+                    return (a.parent === b.parent ? 3 : 4);
+                });
+
+            const root = d3.hierarchy(data);
+            const treeData = treeLayout(root);
+
+            // Create layers for better z-index control
+            const linkLayer = g.append("g").attr("class", "link-layer");
+            const nodeLayer = g.append("g").attr("class", "node-layer");
+            const textLayer = g.append("g").attr("class", "text-layer");
+
+            const link = linkLayer.selectAll(".link")
+                .data(treeData.links())
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .attr("d", d3.linkVertical()
+                    .x(d => d.x)
+                    .y(d => d.y));
+
+            const node = nodeLayer.selectAll(".node")
+                .data(treeData.descendants())
+                .enter()
+                .append("g")
+                .attr("class", d => `node ${d.children ? '' : 'leaf'}`)
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            node.append("circle")
+                .attr("r", 10)
+                .on("click", (event, d) => {
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    update(d);
+                });
+
+            // Move text to separate layer
+            const nodeText = textLayer.selectAll(".node-text")
+                .data(treeData.descendants())
+                .enter()
+                .append("g")
+                .attr("class", d => `node ${d.children ? '' : 'leaf'}`)
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            nodeText.append("text")
+                .attr("dy", d => {
+                    if (d.children) {
+                        return "-1.2em"; // Above for non-leaf nodes
+                    } else {
+                        return "2.2em"; // Below for leaf nodes
+                    }
+                })
+                .attr("x", d => {
+                    if (d.children) {
+                        return -75;
+                    } else {
+                        return 75;
+                    }
+                })
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .attr("class", d => {
+                    return d.depth > 2 ? "leaf-text" : "node-text";
+                })
+                .text(d => d.data.name)
+                .call(wrap, 120);
+
+            // Add hover effects to all nodes
+            node.on("mouseover", function(event, d) {
+                // If it's the root node (Machine Learning), highlight all projects
+                if (d.depth === 0) {
+                    // Highlight the root node
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12)
+                        .style("fill", "var(--hover-color)");
+
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                }
+                // If it's a leaf node, handle it differently
+                else if (!d.children && !d._children) {
+                    // Highlight the current node
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12)
+                        .style("fill", "var(--hover-color)");
+                    
+                    // Find and update corresponding text in text layer
+                    textLayer.selectAll(".leaf")
+                        .filter(td => td.data.name === d.data.name)
+                        .select("text")
+                        .style("opacity", 1);
+
+                    // Highlight parent nodes and their connections
+                    let currentNode = d;
+                    while (currentNode.parent) {
+                        // Highlight parent node
+                        g.select(".node-layer")
+                            .selectAll(".node")
+                            .filter(n => n === currentNode.parent)
+                            .select("circle")
+                            .transition()
+                            .duration(200)
+                            .attr("r", 12)
+                            .style("fill", "var(--hover-color)");
+
+                        // Highlight connecting line
+                        g.select(".link-layer")
+                            .selectAll(".link")
+                            .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                            .transition()
+                            .duration(200)
+                            .style("stroke", "var(--hover-color)")
+                            .style("stroke-width", "3px");
+
+                        currentNode = currentNode.parent;
+                    }
+
+                    // Highlight corresponding project
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", true);
+                    d3.selectAll(".project-item")
+                        .filter(function() {
+                            const projectAlgorithm = d3.select(this).select(".project-algorithm").text();
+                            return projectAlgorithm === d.data.name;
+                        })
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                } else {
+                    // For non-leaf nodes, highlight all child projects
+                    const childNames = getAllChildrenNames(d);
+                    
+                    // Highlight the current node
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12)
+                        .style("fill", "var(--hover-color)");
+
+                    // Highlight parent nodes and their connections
+                    let currentNode = d;
+                    while (currentNode.parent) {
+                        // Highlight parent node
+                        g.select(".node-layer")
+                            .selectAll(".node")
+                            .filter(n => n === currentNode.parent)
+                            .select("circle")
+                            .transition()
+                            .duration(200)
+                            .attr("r", 12)
+                            .style("fill", "var(--hover-color)");
+
+                        // Highlight connecting line
+                        g.select(".link-layer")
+                            .selectAll(".link")
+                            .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                            .transition()
+                            .duration(200)
+                            .style("stroke", "var(--hover-color)")
+                            .style("stroke-width", "3px");
+
+                        currentNode = currentNode.parent;
+                    }
+
+                    // Highlight all relevant project items
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", true);
+                    d3.selectAll(".project-item")
+                        .filter(function() {
+                            const projectAlgorithm = d3.select(this).select(".project-algorithm").text();
+                            return childNames.includes(projectAlgorithm);
+                        })
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                }
+            })
+            .on("mouseout", function(event, d) {
+                // Reset node appearance
+                d3.select(this).select("circle")
+                    .transition()
+                    .duration(200)
+                    .attr("r", 10)
+                    .style("fill", "var(--node-fill)");
+                
+                // Reset parent nodes and their connections
+                let currentNode = d;
+                while (currentNode.parent) {
+                    // Reset parent node
+                    g.select(".node-layer")
+                        .selectAll(".node")
+                        .filter(n => n === currentNode.parent)
+                        .select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 10)
+                        .style("fill", "var(--node-fill)");
+
+                    // Reset connecting line
+                    g.select(".link-layer")
+                        .selectAll(".link")
+                        .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                        .transition()
+                        .duration(200)
+                        .style("stroke", "var(--link-color)")
+                        .style("stroke-width", "2px");
+
+                    currentNode = currentNode.parent;
+                }
+                
+                // If it's a leaf node, handle text opacity
+                if (!d.children && !d._children) {
+                    textLayer.selectAll(".leaf")
+                        .filter(td => td.data.name === d.data.name)
+                        .select("text")
+                        .style("opacity", 0);
+                }
+                
+                // Reset all project items
+                d3.selectAll(".project-item")
+                    .classed("dimmed", false)
+                    .classed("highlighted", false);
+            });
+
+            // Add hover effects to project items
+            d3.selectAll(".project-item")
+                .on("mouseover", function() {
+                    const algorithmName = d3.select(this).select(".project-algorithm").text();
+                    
+                    // Highlight the corresponding node and its parents
+                    const node = g.select(".node-layer").selectAll(".node").filter(d => d.data.name === algorithmName);
+                    let currentNode = node.datum();
+                    
+                    if (currentNode) {
+                        // Highlight the leaf node
+                        node.select("circle")
+                            .classed("highlighted", true)
+                            .transition()
+                            .duration(200)
+                            .attr("r", 12)
+                            .style("fill", "var(--hover-color)");
+
+                        // Show the text for the leaf node
+                        g.select(".text-layer")
+                            .selectAll(".leaf")
+                            .filter(d => d.data.name === algorithmName)
+                            .select("text")
+                            .style("opacity", 1);
+
+                        // Highlight parent nodes and their connections
+                        while (currentNode.parent) {
+                            const parentNode = g.select(".node-layer")
+                                .selectAll(".node")
+                                .filter(d => d === currentNode.parent);
+                            
+                            parentNode.select("circle")
+                                .classed("highlighted", true)
+                                .transition()
+                                .duration(200)
+                                .attr("r", 12)
+                                .style("fill", "var(--hover-color)");
+
+                            // Highlight connecting line
+                            g.select(".link-layer")
+                                .selectAll(".link")
+                                .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                                .transition()
+                                .duration(200)
+                                .style("stroke", "var(--hover-color)")
+                                .style("stroke-width", "3px");
+                            
+                            currentNode = currentNode.parent;
+                        }
+                    }
+
+                    // Dim other project items
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", true);
+                    d3.select(this)
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                })
+                .on("mouseout", function() {
+                    // Reset all node circles
+                    g.select(".node-layer")
+                        .selectAll(".node circle")
+                        .classed("highlighted", false)
+                        .transition()
+                        .duration(200)
+                        .attr("r", 10)
+                        .style("fill", "var(--node-fill)");
+
+                    // Reset all connecting lines
+                    g.select(".link-layer")
+                        .selectAll(".link")
+                        .transition()
+                        .duration(200)
+                        .style("stroke", "var(--link-color)")
+                        .style("stroke-width", "2px");
+
+                    // Reset all node text
+                    g.select(".text-layer")
+                        .selectAll(".leaf text")
+                        .style("opacity", 0);
+
+                    // Reset project items
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", false)
+                        .classed("highlighted", false);
+                });
+        }
+
+        // Function to wrap text
+        function wrap(text, width) {
+            text.each(function() {
+                const text = d3.select(this);
+                const words = text.text().split(/\s+/).reverse();
+                let word;
+                let line = [];
+                let lineNumber = 0;
+                const lineHeight = 1.4;
+                const y = text.attr("y");
+                const dy = parseFloat(text.attr("dy"));
+                let tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+
+                while (word = words.pop()) {
+                    line.push(word);
+                    tspan.text(line.join(" "));
+                    if (tspan.node().getComputedTextLength() > width) {
+                        line.pop();
+                        tspan.text(line.join(" "));
+                        line = [word];
+                        tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                    }
+                }
+            });
+        }
+
+        function update(source) {
+            const treeLayout = d3.tree()
+                .size([height - 200, width/2 - 200])
+                .separation((a, b) => {
+                    return (a.parent === b.parent ? 3 : 4);
+                });
+
+            const root = d3.hierarchy(data);
+            const treeData = treeLayout(root);
+            
+            const nodes = treeData.descendants();
+            const links = treeData.links();
+
+            // Update links
+            g.select(".link-layer").selectAll(".link")
+                .data(links)
+                .join("path")
+                .attr("class", "link")
+                .attr("d", d3.linkVertical()
+                    .x(d => d.x)
+                    .y(d => d.y));
+
+            // Update nodes
+            const node = g.select(".node-layer").selectAll(".node")
+                .data(nodes)
+                .join("g")
+                .attr("class", d => `node ${d.children ? '' : 'leaf'}`)
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            node.select("circle")
+                .attr("r", 10);
+
+            // Update text layer
+            const nodeText = g.select(".text-layer").selectAll(".node")
+                .data(nodes)
+                .join("g")
+                .attr("class", d => `node ${d.children ? '' : 'leaf'}`)
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            nodeText.select("text")
+                .attr("dy", d => {
+                    if (d.children) {
+                        return "-1.2em"; // Above for non-leaf nodes
+                    } else {
+                        return "2.2em"; // Below for leaf nodes
+                    }
+                })
+                .attr("x", d => {
+                    if (d.children) {
+                        return -75;
+                    } else {
+                        return 75;
+                    }
+                })
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .attr("class", d => {
+                    return d.depth > 2 ? "leaf-text" : "node-text";
+                })
+                .text(d => d.data.name)
+                .call(wrap, 120);
+
+            // Update hover effects
+            node.on("mouseover", function(event, d) {
+                // If it's the root node (Machine Learning), highlight all projects
+                if (d.depth === 0) {
+                    // Highlight the root node
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12)
+                        .style("fill", "var(--hover-color)");
+
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                }
+                // If it's a leaf node, handle it differently
+                else if (!d.children && !d._children) {
+                    // Highlight the current node
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12)
+                        .style("fill", "var(--hover-color)");
+                    
+                    // Find and update corresponding text in text layer
+                    g.select(".text-layer").selectAll(".leaf")
+                        .filter(td => td.data.name === d.data.name)
+                        .select("text")
+                        .style("opacity", 1);
+
+                    // Highlight parent nodes and their connections
+                    let currentNode = d;
+                    while (currentNode.parent) {
+                        // Highlight parent node
+                        g.select(".node-layer")
+                            .selectAll(".node")
+                            .filter(n => n === currentNode.parent)
+                            .select("circle")
+                            .transition()
+                            .duration(200)
+                            .attr("r", 12)
+                            .style("fill", "var(--hover-color)");
+
+                        // Highlight connecting line
+                        g.select(".link-layer")
+                            .selectAll(".link")
+                            .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                            .transition()
+                            .duration(200)
+                            .style("stroke", "var(--hover-color)")
+                            .style("stroke-width", "3px");
+
+                        currentNode = currentNode.parent;
+                    }
+
+                    // Highlight corresponding project
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", true);
+                    d3.selectAll(".project-item")
+                        .filter(function() {
+                            const projectAlgorithm = d3.select(this).select(".project-algorithm").text();
+                            return projectAlgorithm === d.data.name;
+                        })
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                } else {
+                    // For non-leaf nodes, highlight all child projects
+                    const childNames = getAllChildrenNames(d);
+                    
+                    // Highlight the current node
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12)
+                        .style("fill", "var(--hover-color)");
+
+                    // Highlight parent nodes and their connections
+                    let currentNode = d;
+                    while (currentNode.parent) {
+                        // Highlight parent node
+                        g.select(".node-layer")
+                            .selectAll(".node")
+                            .filter(n => n === currentNode.parent)
+                            .select("circle")
+                            .transition()
+                            .duration(200)
+                            .attr("r", 12)
+                            .style("fill", "var(--hover-color)");
+
+                        // Highlight connecting line
+                        g.select(".link-layer")
+                            .selectAll(".link")
+                            .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                            .transition()
+                            .duration(200)
+                            .style("stroke", "var(--hover-color)")
+                            .style("stroke-width", "3px");
+
+                        currentNode = currentNode.parent;
+                    }
+
+                    // Highlight all relevant project items
+                    d3.selectAll(".project-item")
+                        .classed("dimmed", true);
+                    d3.selectAll(".project-item")
+                        .filter(function() {
+                            const projectAlgorithm = d3.select(this).select(".project-algorithm").text();
+                            return childNames.includes(projectAlgorithm);
+                        })
+                        .classed("dimmed", false)
+                        .classed("highlighted", true);
+                }
+            })
+            .on("mouseout", function(event, d) {
+                // Reset node appearance
+                d3.select(this).select("circle")
+                    .transition()
+                    .duration(200)
+                    .attr("r", 10)
+                    .style("fill", "var(--node-fill)");
+                
+                // Reset parent nodes and their connections
+                let currentNode = d;
+                while (currentNode.parent) {
+                    // Reset parent node
+                    g.select(".node-layer")
+                        .selectAll(".node")
+                        .filter(n => n === currentNode.parent)
+                        .select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 10)
+                        .style("fill", "var(--node-fill)");
+
+                    // Reset connecting line
+                    g.select(".link-layer")
+                        .selectAll(".link")
+                        .filter(l => l.source === currentNode.parent && l.target === currentNode)
+                        .transition()
+                        .duration(200)
+                        .style("stroke", "var(--link-color)")
+                        .style("stroke-width", "2px");
+
+                    currentNode = currentNode.parent;
+                }
+                
+                // If it's a leaf node, handle text opacity
+                if (!d.children && !d._children) {
+                    textLayer.selectAll(".leaf")
+                        .filter(td => td.data.name === d.data.name)
+                        .select("text")
+                        .style("opacity", 0);
+                }
+                
+                // Reset all project items
+                d3.selectAll(".project-item")
+                    .classed("dimmed", false)
+                    .classed("highlighted", false);
+            });
+        }
+
+        function zoomIn() {
+            currentScale = Math.min(2, currentScale + 0.1);
+            g.transition()
+                .duration(300)
+                .attr("transform", `scale(${currentScale})`);
+        }
+
+        function zoomOut() {
+            currentScale = Math.max(0.5, currentScale - 0.1);
+            g.transition()
+                .duration(300)
+                .attr("transform", `scale(${currentScale})`);
+        }
+
+        function resetZoom() {
+            currentScale = 1;
+            g.transition()
+                .duration(300)
+                .attr("transform", "scale(1)");
+        }
+
+        // Helper function to get all children names
+        function getAllChildrenNames(node) {
+            const names = [];
+            function traverse(n) {
+                if (!n.children && !n._children) {
+                    names.push(n.data.name);
+                } else {
+                    const children = n.children || n._children || [];
+                    children.forEach(traverse);
+                }
+            }
+            traverse(node);
+            return names;
+        }
+
+        // Initialize tree and handle window resize
+        initTree();
+        window.addEventListener('resize', initTree);
+    </script>
+</body>
+</html> 
