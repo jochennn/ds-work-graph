@@ -1,7 +1,3 @@
-# DS Work Graph
-
-A data science project for graph-based analysis and visualization.
-
 ## Project Structure
 
 ```
@@ -26,13 +22,5 @@ A data science project for graph-based analysis and visualization.
 
 - Interactive tree visualization of machine learning projects
 - Categorized by supervised and unsupervised learning
-- Built with D3.js
-- Interactive features:
-  - Click nodes to expand/collapse branches
-  - Zoom in/out controls
-  - Smooth transitions
-  - Hover effects
+- Hover nodes to view relevant projects & vice-versa
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
